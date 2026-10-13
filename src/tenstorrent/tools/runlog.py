@@ -61,9 +61,15 @@ def open_secure_file(
 
     fd = os.open(path, flags, file_mode)
     try:
-        os.chmod(path, file_mode)
-    except OSError:
-        pass
+        os.chmod(path, file_mode, follow_symlinks=False)
+    except (OSError, NotImplementedError):
+        try:
+            os.chmod(path, file_mode)
+        except OSError:
+            pass
+
+    if "b" in mode:
+        return open(fd, mode, buffering=buffering)
     return open(fd, mode, buffering=buffering, encoding=encoding, errors=errors)
 
 
@@ -138,7 +144,7 @@ def open_run_log(
     active_redactor = redactor or Redactor()
     clean_argv = active_redactor.argv([str(a) for a in argv])
 
-    log = RunLog(path=path, _handle=handle, _redactor=redactor)
+    log = RunLog(path=path, _handle=handle, _redactor=active_redactor)
     log.write(f"$ {shlex.join(clean_argv)}\n")
     log.write(f"# {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
     prune(log_dir, keep=keep)
