@@ -82,3 +82,21 @@ def test_open_run_log_creates_secure_permissions(tmp_path: Path):
 
     assert (log_dir.stat().st_mode & 0o777) == DIR_MODE
     assert (log.path.stat().st_mode & 0o777) == FILE_MODE
+
+
+def test_open_run_log_redacts_argv_secrets(tmp_path: Path):
+    log_dir = tmp_path / "secret_logs"
+    secret = "hf_secretToken1234567890abcdef12"
+    log = open_run_log(
+        log_dir,
+        "serve",
+        ["tt", "serve", "--token", secret, f"HF_AUTH={secret}"],
+    )
+    assert log is not None
+    log.close()
+
+    content = log.path.read_text()
+    assert secret not in content
+    assert "$ tt serve --token '<redacted>' 'HF_AUTH=<redacted>'" in content
+
+

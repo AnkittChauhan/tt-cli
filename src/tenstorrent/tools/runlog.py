@@ -110,6 +110,9 @@ def prune(log_dir: Path, keep: int = KEEP_LOGS) -> None:
         pass
 
 
+from ..redaction import Redactor
+
+
 def open_run_log(
     log_dir: Path | None,
     tool: str,
@@ -132,8 +135,11 @@ def open_run_log(
     except Exception:
         return None
 
+    active_redactor = redactor or Redactor()
+    clean_argv = active_redactor.argv([str(a) for a in argv])
+
     log = RunLog(path=path, _handle=handle, _redactor=redactor)
-    log.write(f"$ {shlex.join(str(a) for a in argv)}\n")
+    log.write(f"$ {shlex.join(clean_argv)}\n")
     log.write(f"# {time.strftime('%Y-%m-%d %H:%M:%S')}\n\n")
     prune(log_dir, keep=keep)
     return log
