@@ -483,12 +483,13 @@ def test_bounded_filters_and_enums_are_recorded(runner, collected):
     assert props["hardware"] == "p300"
 
 
+@pytest.mark.parametrize("command", [["serve"], ["model", "serve"]])
 @pytest.mark.parametrize(
     ("args", "expected"),
     [([], "server"), (["--workflow", "benchmarks"], "benchmarks")],
 )
-def test_serve_records_its_workflow(runner, collected, inference_bin, args, expected):
-    result = runner.invoke(app, ["serve", "Llama-3.1-8B-Instruct", "--dry-run", *args])
+def test_serve_records_its_workflow(runner, collected, inference_bin, command, args, expected):
+    result = runner.invoke(app, [*command, "Llama-3.1-8B-Instruct", "--dry-run", *args])
     assert result.exit_code == 0, result.output
     assert _props(collected)["workflow"] == expected
 
